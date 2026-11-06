@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antiguidade Antiquários</title>
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* --- CSS Embutido --- */
+        :root {
+            --preto: #1a1a1a;
+            --marrom-escuro: #3e2723;
+            --marrom: #5d4037;
+            --marrom-claro: #8d6e63;
+            --branco: #f5f5f5;
+            --cinza-claro: #e0e0e0;
+            --sombra: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+
+        body {
+            background-color: var(--branco);
+            color: var(--preto);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--preto);
+            color: var(--branco);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            border-bottom: 5px solid var(--marrom);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            font-weight: normal;
+        }
+
+        header p {
+            color: var(--marrom-claro);
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        /* Navegação */
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1rem;
+            background-color: var(--marrom-escuro);
+        }
+
+        nav a {
+            color: var(--branco);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover, nav a.active {
+            background-color: var(--marrom);
+        }
+
+        /* Container Principal */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Seções (Vitrine e Estoque) */
+        .secao {
+            display: none;
+        }
+
+        .secao.ativa {
+            display: block;
+        }
+
+        h2 {
+            color: var(--marrom-escuro);
+            border-bottom: 2px solid var(--marrom-claro);
+            padding-bottom: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        /* Grid de Produtos (Vitrine) */
+        .grid-produtos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .card-produto {
+            background: #fff;
+            border: 1px solid var(--cinza-claro);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--sombra);
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-produto:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-produto img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: var(--cinza-claro);
+        }
+
+        .card-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-info h3 {
+            color: var(--marrom);
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-info .descricao {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+
+        .preco {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--preto);
+            margin-bottom: 1rem;
+        }
+
+        .estoque-badge {
+            font-size: 0.8rem;
+            color: var(--marrom);
+            background-color: #efebe9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            background-color: var(--marrom-escuro);
+            color: var(--branco);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--marrom);
+        }
+
+        button:disabled {
+            background-color: #bdbdbd;
+            cursor: not-allowed;
+        }
+
+        /* Tabela de Estoque */
+        .tabela-container {
+            overflow-x: auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: var(--sombra);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--cinza-claro);
+        }
+
+        th {
+            background-color: var(--marrom-escuro);
+            color: var(--branco);
+        }
+
+        tr:hover {
+            background-color: #fafafa;
+        }
+
+        .acoes button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+
+        .btn-perigo {
+            background-color: #c62828;
+        }
+
+        .btn-perigo:hover {
+            background-color: #e53935;
+        }
+
+        /* Modal do Carrinho */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.ativo {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--marrom-claro);
+            padding-bottom: 0.5rem;
+        }
+
+        .item-carrinho {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--cinza-claro);
+        }
+
+        .item-carrinho button {
+            padding: 0.2rem 0.6rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .total-carrinho {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 1.5rem 0;
+            text-align: right;
+            color: var(--marrom-escuro);
+        }
+
+        .btn-finalizar {
+            width: 100%;
+            padding: 1rem;
+            background-color: #25D366; /* WhatsApp Green */
+            font-size: 1.2rem;
+        }
+
+        .btn-finalizar:hover {
+            background-color: #128C7E;
+        }
+
+        .btn-fechar {
+            background-color: var(--preto);
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        /* Formulário de Adicionar Produto (Estoque) */
+        .form-estoque {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--sombra);
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-estoque input, .form-estoque textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--cinza-claro);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .form-estoque textarea {
+            grid-column: span 2;
+            resize: vertical;
+        }
+
+        .form-estoque button {
+            grid-column: span 2;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 600px) {
+            .form-estoque {
+                grid-template-columns: 1fr;
+            }
+            .form-estoque textarea, .form-estoque button {
+                grid-column: span 1;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            nav {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+        }
+
+        .carrinho-flutuante {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--preto);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            border: 2px solid var(--marrom-claro);
+        }
+
+        .carrinho-flutuante:hover {
+            background: var(--marrom-escuro);
+        }
+
+        .contador-carrinho {
+            background: var(--marrom-claro);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Antiguidade Antiquários</h1>
+        <p>Peças únicas com história e elegância</p>
+    </header>
+
+    <nav>
+        <a onclick="mostrarSecao('vitrine')" class="active" id="nav-vitrine">Vitrine</a>
+        <a onclick="mostrarSecao('estoque')" id="nav-estoque">Controle de Estoque</a>
+    </nav>
+
+    <div class="container">
+        <!-- VITRINE (Loja) -->
+        <section id="secao-vitrine" class="secao ativa">
+            <h2>Nossas Antiguidades</h2>
+            <div id="lista-vitrine" class="grid-produtos">
+                <!-- Produtos carregados via JS -->
+                <p>Carregando produtos...</p>
+            </div>
+        </section>
+
+        <!-- ESTOQUE (Admin) -->
+        <section id="secao-estoque" class="secao">
+            <h2>Controle de Estoque</h2>
+            
+            <!-- Formulário de Cadastro -->
+            <div class="form-estoque">
+                <input type="text" id="input-nome" placeholder="Nome do produto" required>
+                <input type="number" id="input-preco" placeholder="Preço (R$)" step="0.01" required>
+                <input type="number" id="input-estoque" placeholder="Quantidade em estoque" required>
+                <input type="text" id="input-imagem" placeholder="URL da Imagem (opcional)" class="full-width">
+                <textarea id="input-descricao" placeholder="Descrição do produto" rows="2"></textarea>
+                <button onclick="adicionarProduto()">Adicionar Produto</button>
+            </div>
+
+            <div class="tabela-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Preço</th>
+                            <th>Estoque</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-estoque-corpo">
+                        <!-- Linhas via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Botão Flutuante do Carrinho -->
+    <div class="carrinho-flutuante" onclick="abrirCarrinho()">
+        🛒 Carrinho <span id="contador-carrinho" class="contador-carrinho">0</span>
+    </div>
+
+    <!-- Modal do Carrinho -->
+    <div id="modal-carrinho" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Seu Pedido</h2>
+            <div id="itens-carrinho"></div>
+            <div id="total-carrinho" class="total-carrinho">Total: R$ 0,00</div>
+            <button class="btn-finalizar" onclick="finalizarPedido()">Finalizar via WhatsApp</button>
+            <button class="btn-fechar" onclick="fecharCarrinho()">Continuar Comprando</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÃO DO SUPABASE ---
+        // SUBSTITUA PELOS SEUS DADOS DO SUPABASE
+        const SUPABASE_URL = 'https://bidwmzcxdqwlkbcphgpm.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_bD3JGqXmZKsZmqdECIB3gg_vTeSTJnP';
+        
+        // Inicializa o cliente Supabase
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- CONFIGURAÇÃO DO WHATSAPP ---
+        // Número fornecido: 81992691238 -> Formato internacional: 55 (Brasil) + 81 + número
+        const WHATSAPP_NUMERO = '5581992691238'; 
+
+        // Variáveis Globais
+        let produtosGlobais = [];
+        let carrinho = JSON.parse(localStorage.getItem('carrinhoAntiguidade')) || [];
+
+        // --- FUNÇÕES DE NAVEGAÇÃO ---
+        function mostrarSecao(secao) {
+            document.querySelectorAll('.secao').forEach(s => s.classList.remove('ativa'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            
+            if (secao === 'vitrine') {
+                document.getElementById('secao-vitrine').classList.add('ativa');
+                document.getElementById('nav-vitrine').classList.add('active');
+                carregarProdutos();
+            } else {
+                document.getElementById('secao-estoque').classList.add('ativa');
+                document.getElementById('nav-estoque').classList.add('active');
+                carregarEstoque();
+            }
+        }
+
+        // --- FUNÇÕES DO SUPABASE (CRUD) ---
+
+        // READ: Carregar produtos para a Vitrine
+        async function carregarProdutos() {
+            const container = document.getElementById('lista-vitrine');
+            container.innerHTML = '<p>Carregando antiguidades...</p>';
+
+            const { data, error } = await _supabase
+                .from('produtos')
+                .select('*')
+                .order('id', { ascending: true });
+
+            if (error) {
+                console.error('Erro ao carregar:', error);
+                container.innerHTML = '<p>Erro ao carregar os produtos. Verifique a conexão com o Supabase.</p>';
+                return;
+            }
+
+            produtosGlobais = data;
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = '<p>Nenhum produto cadastrado ainda.</p>';
+                return;
+            }
+
+            data.forEach(prod => {
+                const div = document.createElement('div');
+                div.className = 'card-produto';
+                // Imagem fallback se não houver URL
+                const imgSrc = prod.imagem_url || 'https://via.placeholder.com/300x200?text=Sem+Imagem';
+                
+                div.innerHTML = `
+                    <img src="${imgSrc}" alt="${prod.nome}">
+                    <div class="card-info">
+                        <h3>${prod.nome}</h3>
+                        <p class="descricao">${prod.descricao || 'Sem descrição.'}</p>
+                        <span class="estoque-badge">Estoque: ${prod.estoque} un.</span>
+                        <div class="preco">R$ ${prod.preco.toFixed(2).replace('.', ',')}</div>
+                        <button onclick="adicionarAoCarrinho(${prod.id})" ${prod.estoque < 1 ? 'disabled' : ''}>
+                            ${prod.estoque < 1 ? 'Esgotado' : 'Adicionar ao Carrinho'}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // READ: Carregar Estoque (Admin)
+        async function carregarEstoque() {
+            const tbody = document.getElementById('tabela-estoque-corpo');
+            tbody.innerHTML = '<tr><td colspan="5">Carregando estoque...</td></tr>';
+
+            const { data, error } = await _supabase
+                .from('produtos')
+                .select('*')
+                .order('id', { ascending: true });
+
+            if (error) {
+                console.error('Erro ao carregar estoque:', error);
+                tbody.innerHTML = '<tr><td colspan="5">Erro ao carregar.</td></tr>';
+                return;
+            }
+
+            produtosGlobais = data;
+            tbody.innerHTML = '';
+
+            data.forEach(prod => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${prod.id}</td>
+                    <td>${prod.nome}</td>
+                    <td>R$ ${prod.preco.toFixed(2).replace('.', ',')}</td>
+                    <td>${prod.estoque}</td>
+                    <td class="acoes">
+                        <button class="btn-perigo" onclick="excluirProduto(${prod.id})">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // CREATE: Adicionar novo produto
+        async function adicionarProduto() {
+            const nome = document.getElementById('input-nome').value.trim();
+            const preco = parseFloat(document.getElementById('input-preco').value);
+            const estoque = parseInt(document.getElementById('input-estoque').value);
+            const imagem = document.getElementById('input-imagem').value.trim();
+            const descricao = document.getElementById('input-descricao').value.trim();
+
+            if (!nome || isNaN(preco) || isNaN(estoque)) {
+                alert('Por favor, preencha nome, preço e estoque corretamente.');
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('produtos')
+                .insert([{
+                    nome: nome,
+                    preco: preco,
+                    estoque: estoque,
+                    imagem_url: imagem || null,
+                    descricao: descricao || null
+                }]);
+
+            if (error) {
+                alert('Erro ao adicionar: ' + error.message);
+            } else {
+                alert('Produto adicionado com sucesso!');
+                // Limpar formulário
+                document.getElementById('input-nome').value = '';
+                document.getElementById('input-preco').value = '';
+                document.getElementById('input-estoque').value = '';
+                document.getElementById('input-imagem').value = '';
+                document.getElementById('input-descricao').value = '';
+                carregarEstoque(); // Recarrega a tabela
+            }
+        }
+
+        // DELETE: Excluir produto
+        async function excluirProduto(id) {
+            if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+
+            const { error } = await _supabase
+                .from('produtos')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert('Erro ao excluir: ' + error.message);
+            } else {
+                carregarEstoque();
+            }
+        }
+
+        // --- FUNÇÕES DO CARRINHO ---
+
+        function adicionarAoCarrinho(id) {
+            const produto = produtosGlobais.find(p => p.id === id);
+            if (!produto) return;
+
+            const itemExistente = carrinho.find(item => item.id === id);
+
+            if (itemExistente) {
+                if (itemExistente.quantidade >= produto.estoque) {
+                    alert('Você já adicionou todo o estoque disponível deste item.');
+                    return;
+                }
+                itemExistente.quantidade++;
+            } else {
+                carrinho.push({
+                    id: produto.id,
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    quantidade: 1,
+                    imagem: produto.imagem_url
+                });
+            }
+
+            salvarCarrinho();
+            atualizarContadorCarrinho();
+            alert('Item adicionado ao carrinho!');
+        }
+
+        function removerDoCarrinho(id) {
+            carrinho = carrinho.filter(item => item.id !== id);
+            salvarCarrinho();
+            atualizarContadorCarrinho();
+            renderizarCarrinho();
+        }
+
+        function salvarCarrinho() {
+            localStorage.setItem('carrinhoAntiguidade', JSON.stringify(carrinho));
+        }
+
+        function atualizarContadorCarrinho() {
+            const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+            document.getElementById('contador-carrinho').textContent = totalItens;
+        }
+
+        function abrirCarrinho() {
+            renderizarCarrinho();
+            document.getElementById('modal-carrinho').classList.add('ativo');
+        }
+
+        function fecharCarrinho() {
+            document.getElementById('modal-carrinho').classList.remove('ativo');
+        }
+
+        function renderizarCarrinho() {
+            const container = document.getElementById('itens-carrinho');
+            const totalDiv = document.getElementById('total-carrinho');
+            container.innerHTML = '';
+
+            if (carrinho.length === 0) {
+                container.innerHTML = '<p>Seu carrinho está vazio.</p>';
+                totalDiv.textContent = 'Total: R$ 0,00';
+                return;
+            }
+
+            let total = 0;
+            carrinho.forEach(item => {
+                total += item.preco * item.quantidade;
+                const div = document.createElement('div');
+                div.className = 'item-carrinho';
+                div.innerHTML = `
+                    <div>
+                        <strong>${item.nome}</strong><br>
+                        ${item.quantidade}x R$ ${item.preco.toFixed(2).replace('.', ',')}
+                    </div>
+                    <button onclick="removerDoCarrinho(${item.id})">Remover</button>
+                `;
+                container.appendChild(div);
+            });
+
+            totalDiv.textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+        }
+
+        // --- FINALIZAR PEDIDO (WHATSAPP) ---
+        function finalizarPedido() {
+            if (carrinho.length === 0) {
+                alert('Seu carrinho está vazio.');
+                return;
+            }
+
+            let mensagem = 'Olá! Gostaria de finalizar meu pedido na *Antiguidade Antiquários*:%0A%0A';
+            let total = 0;
+
+            carrinho.forEach(item => {
+                const subtotal = item.preco * item.quantidade;
+                total += subtotal;
+                mensagem += `*${item.nome}*%0A`;
+                mensagem += `Quantidade: ${item.quantidade}%0A`;
+                mensagem += `Preço: R$ ${item.preco.toFixed(2).replace('.', ',')}%0A`;
+                mensagem += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}%0A%0A`;
+            });
+
+            mensagem += `*Total do Pedido: R$ ${total.toFixed(2).replace('.', ',')}*%0A%0A`;
+            mensagem += 'Aguardo instruções para pagamento e entrega.';
+
+            // Codifica a mensagem para URL
+            const mensagemCodificada = encodeURIComponent(mensagem);
+            
+            // Link do WhatsApp (wa.me)
+            const linkWhatsApp = `https://wa.me/${WHATSAPP_NUMERO}?text=${mensagemCodificada}`;
+
+            // Abre o WhatsApp em nova aba
+            window.open(linkWhatsApp, '_blank');
+
+            // Opcional: Limpar carrinho após finalizar? 
+            // Se quiser limpar, descomente as linhas abaixo:
+            // carrinho = [];
+            // salvarCarrinho();
+            // atualizarContadorCarrinho();
+            // fecharCarrinho();
+            // alert('Pedido enviado! O carrinho foi esvaziado.');
+        }
+
+        // --- INICIALIZAÇÃO ---
+        window.onload = () => {
+            carregarProdutos();
+            atualizarContadorCarrinho();
+            
+            // Se estiver na aba de estoque por algum motivo (refresh), recarrega a tabela
+            if (document.getElementById('secao-estoque').classList.contains('ativa')) {
+                carregarEstoque();
+            }
+        };
+    </script>
+</body>
+</html>
